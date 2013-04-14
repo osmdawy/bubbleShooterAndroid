@@ -8,6 +8,7 @@ import android.content.Context;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Point;
 
 import android.util.Log;
@@ -22,6 +23,9 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 	private Bubble[] bubbles = new Bubble[30];
 	private int[] bubbles_normal = new int[8];
 	Point[] positions = new Point[bubbles.length];
+	static int width;
+	static int height;
+   
 
 	private void initialize() {
 		bubbles_normal[0] = R.drawable.bubble_1;
@@ -32,12 +36,14 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 		bubbles_normal[5] = R.drawable.bubble_6;
 		bubbles_normal[6] = R.drawable.bubble_7;
 		bubbles_normal[7] = R.drawable.bubble_8;
+		
 	}
 
 	public GameScreen(Context context) {
 
 		super(context);
 		initialize();
+		 
 		// adding the callback (this) to the surface holder to intercept events
 		getHolder().addCallback(this);
 		Random random = new Random();
@@ -113,6 +119,9 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 	@Override
 	protected void onDraw(Canvas canvas) {
+//		canvas.drawColor(Color.BLACK);
+		
+		
 		// fills the canvas with black
 		canvas.drawColor(Color.WHITE);
 		for (int i = 0; i < bubbles.length; i++) {

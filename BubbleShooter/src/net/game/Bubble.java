@@ -4,13 +4,16 @@ import android.graphics.Canvas;
 
 
 public class Bubble {
-	private Bitmap bitmap;	// the actual bitmap
+	 private Bitmap bitmap;	// the actual bitmap
 	 int x;			// the X coordinate
 	 int y;			// the Y coordinat
 	boolean destroy ;
 	public Bubble(Bitmap bitmap, int x, int y) {
 		super();
+		
 		this.bitmap = bitmap;
+		GameScreen.width = bitmap.getWidth();
+		GameScreen.height=bitmap.getHeight();
 		this.x = x;
 		this.y = y;
 		destroy = false;
