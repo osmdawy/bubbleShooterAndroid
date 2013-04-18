@@ -1,5 +1,6 @@
 package net.game;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -41,11 +42,11 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 	int tryX = 5;
 	float deltaX = 0;
 	boolean moving = false;
-	final int noOfSteps = 20;
+	final int noOfSteps = 50;
 
 	private void initialize() {
 		// num of bubbles should be initialized according to level no
-		numOfBubble = 60;
+		numOfBubble = 8;
 
 		originalPoint = new Point(width, height / 2);
 		// generating pics of bubbles
@@ -73,6 +74,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 				R.drawable.bubble_7, options);
 		bubbles_normal[7] = BitmapFactory.decodeResource(getResources(),
 				R.drawable.bubble_8, options);
+		bubbleSize = bubbles_normal[0].getWidth();
 
 	}
 
@@ -134,7 +136,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 					}
 				} else {
 
-					 bubbles[i][j]=null;
+					bubbles[i][j] = null;
 
 				}
 				numOfBubblesGen++;
@@ -210,14 +212,14 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 			movingBubble = new Bubble(bubbles_normal[removed.colorIndex],
 					width / 2, height);
-			movingBubble.colorIndex=removed.colorIndex;
+			movingBubble.colorIndex = removed.colorIndex;
 			float desiredX = event.getX();
-			deltaX =  ((desiredX-movingBubble.x)/noOfSteps);
-//			if (desiredX > width / 2) {
-//				deltaX = 1;
-//			} else {
-//				deltaX = -1;
-//			}
+			deltaX = ((desiredX - movingBubble.x) / noOfSteps);
+			// if (desiredX > width / 2) {
+			// deltaX = 1;
+			// } else {
+			// deltaX = -1;
+			// }
 			float desiredY = event.getY();
 			slope = (desiredY - movingBubble.y) / (desiredX - movingBubble.x);
 			moving = true;
@@ -240,22 +242,21 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 	public void update() {
 		if (movingBubble != null) {
-			if (moving){
+			if (moving) {
 				if (movingBubble.x >= width) {
 					deltaX = -deltaX;
 				}
-			if (movingBubble.x <= 0) {
-				deltaX = -deltaX;
+				if (movingBubble.x <= 0) {
+					deltaX = -deltaX;
+				}
+
+				movingBubble.x = (int) (movingBubble.x + deltaX);
+				int deltaY = Math.abs((int) (slope * deltaX));
+
+				movingBubble.y = movingBubble.y - deltaY;
+
+				checkCollision();
 			}
-		
-			movingBubble.x = (int) (movingBubble.x + deltaX);
-			int deltaY = Math.abs((int) (slope * deltaX));
-			
-				
-			movingBubble.y = movingBubble.y -deltaY ;
-			
-			checkCollision();
-		}
 		}
 	}
 
@@ -265,7 +266,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 			for (int j = 0; j < bubblewidth; j++) {
 
 				if (bubbles[i][j] != null && !bubbles[i][j].destroy) {
-					
+
 					bubbles[i][j].draw(canvas);
 				}
 			}
@@ -279,42 +280,196 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 	}
 
+	private ArrayList<Bubble> getBubblesFrame() {
+		ArrayList<Bubble> myBubbles = new ArrayList<Bubble>();
+		// for (int i = 0; i < bubbleHight; i++) {
+		// for (int j = 0; j < bubbleHight; j++) {
+		// Bubble curr = bubbles[i][j];
+		// if(curr==null){
+		// //check Right
+		// if(j<bubbleHight-1){
+		// Bubble bubbleFrame = bubbles[i][j+1];
+		// if(bubbleFrame!=null){
+		//
+		// }
+		// }
+		//
+		// //check left
+		//
+		//
+		// //check up
+		// }
+		// }
+		// }
+		return myBubbles;
+	}
+
 	private void checkCollision() {
-		if(moving){
-		
-		for (int i = bubbleHight-1; i >=0  &&moving; i--) {
-			for (int j =  bubblewidth-1; j >=0 && moving; j--) {
-				Bubble curr = bubbles[i][j];
-				if (curr != null) {
-					if (curr.x + 30 == movingBubble.x && (movingBubble.y-curr.y)<10) {
-						if (j < bubblewidth - 1) {
-							bubbles[i][j + 1] = new Bubble(
-									bubbles_normal[movingBubble.colorIndex],
-									curr.x + 30, curr.y);
-							moving = false;
-							Log.d("Hi", "henaaaa   "+movingBubble.colorIndex);
+		if (moving) {
+
+			for (int i = bubbleHight - 1; i >= 0 && moving; i--) {
+				for (int j = bubblewidth - 1; j >= 0 && moving; j--) {
+					Bubble curr = bubbles[i][j];
+					if (curr != null) {
+						int diffY = Math.abs(movingBubble.y - curr.y);
+						int diffX = Math.abs(movingBubble.x - curr.x);
+						// check if hit from right
+						if ((curr.x + 30 - movingBubble.x)<5&&(curr.x + 30 - movingBubble.x)>-5&& (diffY <5)) {
+							if (j < bubblewidth - 1) {
+								bubbles[i][j + 1] = new
+
+								Bubble(
+
+								bubbles_normal[movingBubble.colorIndex],
+
+								curr.x + 30, curr.y);
+								moving = false;
+								Log.d("Hi", "rightttt  " );
+							}
+							// check if hit from left
+						} else if (curr.x == movingBubble.x + 30 &&
+
+						(diffY < 5)) {
+							if (j > 0) {
+								bubbles[i][j - 1] = new
+
+								Bubble(
+
+								bubbles_normal[movingBubble.colorIndex],
+
+								curr.x - 30, curr.y);
+								Log.d("Hi", "lefttt  " );
+								moving = false;
+							}
+							// check if hit from down
+						} else if ((curr.y + 30) >= movingBubble.y && diffX	< 5) {
+							if (i < bubbleHight - 1) {
+								if ((movingBubble.x -
+
+								curr.x) > -15 &&
+
+								(movingBubble.x - curr.x) < 15) {// put
+
+									// in
+
+									// the
+
+									// left
+
+									// bottom
+									Log.d("Hi", "bottom left  " );
+									if (i % 2 == 0)
+
+									{// for even rows
+										if (j
+
+										> 0) {
+
+											bubbles[i + 1][j - 1] = new Bubble(
+
+													bubbles_normal[movingBubble.colorIndex],
+
+													curr.x - 15, curr.y + 30);
+
+											moving = false;
+										}
+									} else {// for odd rows
+
+										bubbles[i + 1][j] = new Bubble(
+
+												bubbles_normal[movingBubble.colorIndex],
+
+												curr.x - 15, curr.y + 30);
+
+										moving = false;
+									}
+
+								} else if (movingBubble.x -
+
+								curr.x > 15 &&
+
+								movingBubble.x - curr.x < 30) {// put
+
+									// in
+
+									// the
+
+									// right
+
+									// bottom
+									Log.d("Hi", "bottom right  " );
+									if (i % 2 == 0)
+
+									{
+
+										bubbles[i + 1][j] = new Bubble(
+
+												bubbles_normal[movingBubble.colorIndex],
+
+												curr.x + 15, curr.y + 30);
+										
+										moving = false;
+									} else {
+
+										if (j
+
+										< bubblewidth - 1) {
+
+											bubbles[i + 1][j + 1] = new Bubble(
+
+													bubbles_normal[movingBubble.colorIndex],
+
+													curr.x + 15, curr.y + 30);
+
+											moving = false;
+										}
+									}
+								}
+							}
 						}
-					} else if (curr.x - 30 == movingBubble.x&&((movingBubble.y-curr.y)<10)) {
-						if (j > 0) {
-							bubbles[i][j - 1] = new Bubble(
-									bubbles_normal[movingBubble.colorIndex],
-									curr.x - 30, curr.y);
-							Log.d("Hi", "henaaaa   "+movingBubble.colorIndex);
-							moving = false;
-						}
-					}else if(curr.y+30 == movingBubble.y && (curr.x+15 == movingBubble.x)){
-						if(i<bubbleHight){
-							bubbles[i+1][j]= new Bubble(
-									bubbles_normal[movingBubble.colorIndex],
-									curr.x+15 , curr.y+30);
-							Log.d("Hi", "henaaaa   "+movingBubble.colorIndex);
-							moving = false;
-						}
+						// if (curr.x + 30 == movingBubble.x &&
+						// (movingBubble.y-curr.y)<10) {
+						// if (j < bubblewidth - 1) {
+						// bubbles[i][j + 1] = new Bubble(
+						// bubbles_normal[movingBubble.colorIndex],
+						// curr.x +30 , curr.y);
+						// moving = false;
+						// Log.d("Hi", "henaaaa   "+movingBubble.colorIndex);
+						// }
+						// } else if (curr.x - 30 ==
+						// movingBubble.x&&((movingBubble.y-curr.y)<10)) {
+						// if (j > 0) {
+						// bubbles[i][j - 1] = new Bubble(
+						// bubbles_normal[movingBubble.colorIndex],
+						// curr.x - 30, curr.y);
+						// Log.d("Hi", "henaaaa   "+movingBubble.colorIndex);
+						// moving = false;
+						// }
+						// }else if(curr.y+30 == movingBubble.y &&
+						// (movingBubble.x-curr.x )<5 && (movingBubble.x-curr.x
+						// )>-5){
+						// if(i<bubbleHight){
+						// bubbles[i+1][j]= new Bubble(
+						// bubbles_normal[movingBubble.colorIndex],
+						// curr.x+15 , curr.y+30);
+						// Log.d("Hi", "henaaaa   "+movingBubble.colorIndex);
+						// moving = false;
+						// }
+						// }else if((movingBubble.y-(curr.y+30))<5 &&
+						// (curr.x-movingBubble.x )<5 &&
+						// (curr.x-movingBubble.x)>-5){
+						// if(i<bubbleHight && j>0){
+						// bubbles[i+1][j-1]= new Bubble(
+						// bubbles_normal[movingBubble.colorIndex],
+						// curr.x-15 , curr.y+30);
+						// Log.d("Hi", "henaaaa   "+movingBubble.colorIndex);
+						// moving = false;
+						// }
+						// }
+
 					}
-					
 				}
 			}
-		}
 		}
 	}
 

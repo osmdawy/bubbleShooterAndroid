@@ -1,6 +1,7 @@
 package net.game;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 
 
@@ -28,4 +29,5 @@ public class Bubble {
 	public void draw(Canvas canvas) {
 		canvas.drawBitmap(bitmap, x - (bitmap.getWidth() / 2), y - (bitmap.getHeight() / 2), null);
 	}
+	
 }
