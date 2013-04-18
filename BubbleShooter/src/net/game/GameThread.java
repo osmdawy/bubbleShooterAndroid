@@ -37,7 +37,15 @@ public class GameThread extends Thread{
 					// update game state 
 					// render state to the screen
 					// draws the canvas on the panel
-					this.gamePanel.onDraw(canvas);				
+					this.gamePanel.update();
+					this.gamePanel.onDraw(canvas);
+					
+//					try {
+//						Thread.sleep(100);
+//					} catch (InterruptedException e) {
+//						// TODO Auto-generated catch block
+//						e.printStackTrace();
+//					}
 				}
 			} finally {
 				// in case of an exception the surface is not left in 
