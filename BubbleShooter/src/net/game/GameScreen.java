@@ -46,11 +46,11 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 	private void initialize() {
 		// num of bubbles should be initialized according to level no
-		numOfBubble = 8;
+		numOfBubble = 6;
 
 		originalPoint = new Point(width, height / 2);
 		// generating pics of bubbles
-		bubbles = new Bubble[10][8];
+		bubbles = new Bubble[20][10];
 		bubbleHight = bubbles.length;
 		bubblewidth = bubbles[0].length;
 		// movingBubble = new Bubble();
@@ -213,6 +213,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 			movingBubble = new Bubble(bubbles_normal[removed.colorIndex],
 					width / 2, height);
 			movingBubble.colorIndex = removed.colorIndex;
+			movingBubble.destroy = false;
 			float desiredX = event.getX();
 			deltaX = ((desiredX - movingBubble.x) / noOfSteps);
 			// if (desiredX > width / 2) {
@@ -235,7 +236,8 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 		canvas.drawColor(Color.WHITE);
 
 		drawBubbles(canvas);
-		if (movingBubble != null)
+
+		if (movingBubble != null && !movingBubble.destroy)
 			movingBubble.draw(canvas);
 
 	}
@@ -243,11 +245,11 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 	public void update() {
 		if (movingBubble != null) {
 			if (moving) {
-				if (movingBubble.x >= width) {
+				if (movingBubble.x >= 30*bubblewidth) {
 					deltaX = -deltaX;
 				}
-				if (movingBubble.x <= 0) {
-					deltaX = -deltaX;
+				if (movingBubble.x <= 30) {
+					deltaX = -1 * deltaX;
 				}
 
 				movingBubble.x = (int) (movingBubble.x + deltaX);
@@ -306,49 +308,71 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 	private void checkCollision() {
 		if (moving) {
+			// check if hit the ceil
+			if (movingBubble.y <= 30) {
+				int posX = (movingBubble.x - 30) / 30;
+				if(bubbles[0][posX]==null){
+				bubbles[0][posX] = new Bubble(
 
+				bubbles_normal[movingBubble.colorIndex],
+
+				posX * 30 + 30, 30);
+				moving=false;
+				movingBubble.destroy=true;
+				numOfBubble++;
+				}
+			}
 			for (int i = bubbleHight - 1; i >= 0 && moving; i--) {
 				for (int j = bubblewidth - 1; j >= 0 && moving; j--) {
 					Bubble curr = bubbles[i][j];
 					if (curr != null) {
-						int diffY = Math.abs(movingBubble.y - curr.y);
-						int diffX = Math.abs(movingBubble.x - curr.x);
+						// int diffY = Math.abs(movingBubble.y - curr.y);
+
 						// check if hit from right
-						if ((curr.x + 30 - movingBubble.x)<5&&(curr.x + 30 - movingBubble.x)>-5&& (diffY <5)) {
-							if (j < bubblewidth - 1) {
-								bubbles[i][j + 1] = new
-
-								Bubble(
-
-								bubbles_normal[movingBubble.colorIndex],
-
-								curr.x + 30, curr.y);
-								moving = false;
-								Log.d("Hi", "rightttt  " );
-							}
-							// check if hit from left
-						} else if (curr.x == movingBubble.x + 30 &&
-
-						(diffY < 5)) {
-							if (j > 0) {
-								bubbles[i][j - 1] = new
-
-								Bubble(
-
-								bubbles_normal[movingBubble.colorIndex],
-
-								curr.x - 30, curr.y);
-								Log.d("Hi", "lefttt  " );
-								moving = false;
-							}
-							// check if hit from down
-						} else if ((curr.y + 30) >= movingBubble.y && diffX	< 5) {
+						// if ((curr.x + 30 - movingBubble.x) < 5
+						// && (curr.x + 30 - movingBubble.x) > -5
+						// && (diffY < 5)) {
+						// if (j < bubblewidth - 1) {
+						// if (bubbles[i][j + 1] == null) {
+						// bubbles[i][j + 1] = new
+						//
+						// Bubble(
+						//
+						// bubbles_normal[movingBubble.colorIndex],
+						//
+						// curr.x + 30, curr.y);
+						// moving = false;
+						// Log.d("Hi", "rightttt  ");
+						// movingBubble.destroy=true;
+						// numOfBubble++;
+						// }
+						// }
+						// // check if hit from left
+						// } else if ((movingBubble.x + 30 - curr.x) < 5
+						// && (movingBubble.x + 30 - curr.x) > -5 &&
+						//
+						// (diffY < 5)) {
+						// if (j > 0) {
+						// if (bubbles[i][j - 1] == null) {
+						// bubbles[i][j - 1] = new
+						//
+						// Bubble(
+						//
+						// bubbles_normal[movingBubble.colorIndex],
+						//
+						// curr.x - 30, curr.y);
+						// Log.d("Hi", "lefttt  ");
+						// moving = false;
+						// movingBubble.destroy=true;
+						// numOfBubble++;
+						// }
+						// }
+						// check if hit from down
+						// }
+						if ((curr.y + 30) >= movingBubble.y) {
 							if (i < bubbleHight - 1) {
-								if ((movingBubble.x -
-
-								curr.x) > -15 &&
-
-								(movingBubble.x - curr.x) < 15) {// put
+								if ((movingBubble.x - curr.x) >= -15
+										&& (movingBubble.x - curr.x) <= 12) {// put
 
 									// in
 
@@ -357,38 +381,43 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 									// left
 
 									// bottom
-									Log.d("Hi", "bottom left  " );
+									Log.d("Hi", "bottom left  ");
 									if (i % 2 == 0)
 
 									{// for even rows
 										if (j
 
 										> 0) {
+											if (bubbles[i + 1][j - 1] == null) {
+												bubbles[i + 1][j - 1] = new Bubble(
 
-											bubbles[i + 1][j - 1] = new Bubble(
+														bubbles_normal[movingBubble.colorIndex],
+
+														curr.x - 15,
+														curr.y + 30);
+
+												moving = false;
+												movingBubble.destroy = true;
+												numOfBubble++;
+											}
+										}
+									} else {// for odd rows
+										if (bubbles[i + 1][j] == null) {
+											bubbles[i + 1][j] = new Bubble(
 
 													bubbles_normal[movingBubble.colorIndex],
 
 													curr.x - 15, curr.y + 30);
 
 											moving = false;
+											movingBubble.destroy = true;
+											numOfBubble++;
 										}
-									} else {// for odd rows
-
-										bubbles[i + 1][j] = new Bubble(
-
-												bubbles_normal[movingBubble.colorIndex],
-
-												curr.x - 15, curr.y + 30);
-
-										moving = false;
 									}
 
-								} else if (movingBubble.x -
+								} else if ((movingBubble.x - curr.x) >= 12 &&
 
-								curr.x > 15 &&
-
-								movingBubble.x - curr.x < 30) {// put
+								(movingBubble.x - curr.x) <= 30) {// put
 
 									// in
 
@@ -397,31 +426,39 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 									// right
 
 									// bottom
-									Log.d("Hi", "bottom right  " );
+									Log.d("Hi", "bottom right  ");
 									if (i % 2 == 0)
 
 									{
+										if (bubbles[i + 1][j] == null) {
 
-										bubbles[i + 1][j] = new Bubble(
-
-												bubbles_normal[movingBubble.colorIndex],
-
-												curr.x + 15, curr.y + 30);
-										
-										moving = false;
-									} else {
-
-										if (j
-
-										< bubblewidth - 1) {
-
-											bubbles[i + 1][j + 1] = new Bubble(
+											bubbles[i + 1][j] = new Bubble(
 
 													bubbles_normal[movingBubble.colorIndex],
 
 													curr.x + 15, curr.y + 30);
 
 											moving = false;
+											movingBubble.destroy = true;
+											numOfBubble++;
+										}
+									} else {
+
+										if (j
+
+										< bubblewidth - 1) {
+											if (bubbles[i + 1][j + 1] == null) {
+												bubbles[i + 1][j + 1] = new Bubble(
+
+														bubbles_normal[movingBubble.colorIndex],
+
+														curr.x + 15,
+														curr.y + 30);
+
+												moving = false;
+												movingBubble.destroy = true;
+												numOfBubble++;
+											}
 										}
 									}
 								}
