@@ -20,6 +20,7 @@ public class Bubble {
 //		GameScreen.height=bitmap.getHeight();
 		this.x = x;
 		this.y = y;
+		colorIndex=0;
 		destroy = false;
 //		this.speed = new Speed();
 	}

@@ -39,9 +39,9 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 	Bubble movingBubble;
 	float slope;
 	int tryX = 5;
-	int deltaX = 0;
+	float deltaX = 0;
 	boolean moving = false;
-	final int noOfSteps = 10;
+	final int noOfSteps = 20;
 
 	private void initialize() {
 		// num of bubbles should be initialized according to level no
@@ -193,7 +193,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 	public boolean onTouchEvent(MotionEvent event) {
 		if (!moving) {
 			Bubble removed = waitingBubbles.poll();
-			// changing bubble bosition
+			// changing bubble position
 
 			// int tempY = removed.y;
 			Random random = new Random();
@@ -210,12 +210,14 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 			movingBubble = new Bubble(bubbles_normal[removed.colorIndex],
 					width / 2, height);
+			movingBubble.colorIndex=removed.colorIndex;
 			float desiredX = event.getX();
-			if (desiredX > width / 2) {
-				deltaX = 1;
-			} else {
-				deltaX = -1;
-			}
+			deltaX =  ((desiredX-movingBubble.x)/noOfSteps);
+//			if (desiredX > width / 2) {
+//				deltaX = 1;
+//			} else {
+//				deltaX = -1;
+//			}
 			float desiredY = event.getY();
 			slope = (desiredY - movingBubble.y) / (desiredX - movingBubble.x);
 			moving = true;
@@ -240,13 +242,18 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 		if (movingBubble != null) {
 			if (moving){
 				if (movingBubble.x >= width) {
-					deltaX = -1;
+					deltaX = -deltaX;
 				}
 			if (movingBubble.x <= 0) {
-				deltaX = 1;
+				deltaX = -deltaX;
 			}
-			movingBubble.x = movingBubble.x + deltaX;
-			movingBubble.y = movingBubble.y - Math.abs((int) (slope * deltaX));
+		
+			movingBubble.x = (int) (movingBubble.x + deltaX);
+			int deltaY = Math.abs((int) (slope * deltaX));
+			
+				
+			movingBubble.y = movingBubble.y -deltaY ;
+			
 			checkCollision();
 		}
 		}
@@ -274,8 +281,9 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 	private void checkCollision() {
 		if(moving){
-		for (int i = 0; i < bubbleHight &&moving; i++) {
-			for (int j = 0; j < bubblewidth && moving; j++) {
+		
+		for (int i = bubbleHight-1; i >=0  &&moving; i--) {
+			for (int j =  bubblewidth-1; j >=0 && moving; j--) {
 				Bubble curr = bubbles[i][j];
 				if (curr != null) {
 					if (curr.x + 30 == movingBubble.x && (movingBubble.y-curr.y)<10) {
