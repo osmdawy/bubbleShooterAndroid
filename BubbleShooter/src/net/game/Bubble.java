@@ -12,6 +12,7 @@ public class Bubble {
 	 int colorIndex;
 	boolean destroy ;
 	boolean markedCheck=false;
+	int noOfShiftedRows=0;
 	
 //	Speed speed;
 

@@ -16,6 +16,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.media.AudioManager;
+import android.media.SoundPool;
 
 import android.util.Log;
 import android.view.MotionEvent;
@@ -28,6 +30,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 	private GameThread thread;
 	private Bubble[][] bubbles;
 	private Bitmap[] bubbles_normal = new Bitmap[8];
+	private Bitmap backgroundBMP;
 	// variables for destruction
 	Queue<Point> bubblePositionsToDestroy;
 	int colorIndexDest = 0;
@@ -38,14 +41,21 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 	static int bubblewidth;
 	static int bubbleSize;
 	static int numOfBubble = 0;
-	Queue<Bubble> waitingBubbles = new LinkedList<Bubble>();
+	LinkedList<Bubble> waitingBubbles = new LinkedList<Bubble>();
 	int numOfWaitingBubbles = 4;
 	Bubble movingBubble;
 	float slope;
 	float deltaX = 0;
 	boolean moving = false;
 	final int noOfSteps = 50;
-
+	boolean changingWaiting = false;
+	int noOfShiftedRows = 0;
+	int t1 = 0;
+	 private SoundPool sounds;
+     private int collide;
+     private int destroyGroup;
+     private int lose;
+     Random random = new Random();
 	private void initialize() {
 		// num of bubbles should be initialized according to level no
 		numOfBubble = 6;
@@ -59,18 +69,17 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 		// movingBubble = new Bubble();
 
 		BitmapFactory.Options options = new BitmapFactory.Options();
-		BitmapFactory.decodeResource(getResources(), R.drawable.bubble_1,
-				options);
+
 		bubbles_normal[0] = BitmapFactory.decodeResource(getResources(),
-				R.drawable.bubble_2, options);
+				R.drawable.bubble_1, options);
 		bubbles_normal[1] = BitmapFactory.decodeResource(getResources(),
-				R.drawable.bubble_3, options);
+				R.drawable.bubble_2, options);
 		bubbles_normal[2] = BitmapFactory.decodeResource(getResources(),
-				R.drawable.bubble_4, options);
+				R.drawable.bubble_3, options);
 		bubbles_normal[3] = BitmapFactory.decodeResource(getResources(),
-				R.drawable.bubble_5, options);
+				R.drawable.bubble_4, options);
 		bubbles_normal[4] = BitmapFactory.decodeResource(getResources(),
-				R.drawable.bubble_6, options);
+				R.drawable.bubble_5, options);
 		bubbles_normal[5] = BitmapFactory.decodeResource(getResources(),
 				R.drawable.bubble_6, options);
 		bubbles_normal[6] = BitmapFactory.decodeResource(getResources(),
@@ -78,6 +87,9 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 		bubbles_normal[7] = BitmapFactory.decodeResource(getResources(),
 				R.drawable.bubble_8, options);
 		bubbleSize = bubbles_normal[0].getWidth();
+		backgroundBMP =BitmapFactory.decodeResource(getResources(),
+				R.drawable.background, options); 
+		
 
 	}
 
@@ -90,7 +102,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 		// adding the callback (this) to the surface holder to intercept events
 		getHolder().addCallback(this);
-		Random random = new Random();
+		
 		// create droid and load bitmap
 		// boolean odd = false;
 		// float x = 1;
@@ -147,23 +159,27 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 			}
 
 		}
-		
 
-		for (int i = numOfWaitingBubbles-1; i >=0; i--) {
+		for (int i = 0; i <numOfWaitingBubbles; i++) {
 			index = random.nextInt(8);
 			Bubble curr = new Bubble(bubbles_normal[index], 30 + i * 30, height);
 			curr.colorIndex = index;
-			waitingBubbles.add(curr);
+			waitingBubbles.addFirst(curr);
 		}
-//		index = random.nextInt(8);
-//		Bubble First = new Bubble(bubbles_normal[index], width / 2, height);
-//		First.colorIndex = index;
-//		waitingBubbles.add(First);
+		// index = random.nextInt(8);
+		// Bubble First = new Bubble(bubbles_normal[index], width / 2, height);
+		// First.colorIndex = index;
+		// waitingBubbles.add(First);
 		// create the game loop thread
 		thread = new GameThread(getHolder(), this);
 
 		// make the GamePanel focusable so it can handle events
 		setFocusable(true);
+		 sounds = new SoundPool(10, AudioManager.STREAM_MUSIC,0);
+         collide = sounds.load(context, R.raw.rebound, 1);
+         destroyGroup = sounds.load(context, R.raw.destroy_group, 1);
+         lose = sounds.load(context, R.raw.lose, 1);
+
 	}
 
 	@Override
@@ -199,20 +215,22 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		if (!moving) {
-			Bubble removed = waitingBubbles.poll();
+			Bubble removed = waitingBubbles.removeFirst();
 			// changing bubble position
 
 			// int tempY = removed.y;
-			Random random = new Random();
+			
+			synchronized (waitingBubbles) {
+				for (int i = 0; i < waitingBubbles.size(); i++) {
+					waitingBubbles.get(i).x = 	waitingBubbles.get(i).x+30;
+					
+				}
+			}
+			
 			int index = random.nextInt(8);
 			Bubble curr = new Bubble(bubbles_normal[index], 30, height);
 			curr.colorIndex = index;
-			waitingBubbles.add(curr);
-			Iterator<Bubble> it = waitingBubbles.iterator();
-
-			while (it.hasNext()) {
-				it.next().x += 30;
-			}
+			waitingBubbles.addLast(curr);
 			// add new Bubble
 
 			movingBubble = new Bubble(bubbles_normal[removed.colorIndex],
@@ -235,15 +253,16 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 	@Override
 	protected void onDraw(Canvas canvas) {
-		// canvas.drawColor(Color.BLACK);
+		 canvas.drawColor(Color.BLACK);
 
 		// fills the canvas with black
 		canvas.drawColor(Color.WHITE);
-
+		canvas.drawBitmap(backgroundBMP, 165- (backgroundBMP.getWidth() / 2),  10, null);
 		drawBubbles(canvas);
 
 		if (movingBubble != null && !movingBubble.destroy)
 			movingBubble.draw(canvas);
+		update();
 
 	}
 
@@ -393,6 +412,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 		// check to destroy
 		if (numOfBubblesChecked > 2) {
+			sounds.play(destroyGroup, 5.0f, 5.0f, 1, 0, 1.5f);
 			for (int i = 0; i < bubbleHight; i++) {
 				for (int j = 0; j < bubblewidth; j++) {
 					if (bubbles[i][j] != null && bubbles[i][j].markedCheck) {
@@ -403,17 +423,19 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 			// check if the ball should fall (no bubbles hold it)
 			for (int i = 0; i < bubbleHight; i++) {
 				for (int j = 0; j < bubblewidth; j++) {
-					if (bubbles[i][j] != null && i>0) {
-						if(i%2==0){
-							if(j>0){
-								if(bubbles[i-1][j-1]==null&&bubbles[i-1][j]==null){
-									bubbles[i][j]=null;
+					if (bubbles[i][j] != null && i > 0) {
+						if (i % 2 == 0) {
+							if (j > 0) {
+								if (bubbles[i - 1][j - 1] == null
+										&& bubbles[i - 1][j] == null) {
+									bubbles[i][j] = null;
 								}
 							}
-						}else{
-							if(j<bubblewidth-1){
-								if(bubbles[i-1][j+1]==null&&bubbles[i-1][j]==null){
-									bubbles[i][j]=null;
+						} else {
+							if (j < bubblewidth - 1) {
+								if (bubbles[i - 1][j + 1] == null
+										&& bubbles[i - 1][j] == null) {
+									bubbles[i][j] = null;
 								}
 							}
 						}
@@ -431,7 +453,6 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 				}
 			}
 		}
-	
 
 	}
 
@@ -451,28 +472,47 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 				movingBubble.y = movingBubble.y - deltaY;
 
 				checkCollision();
+				
 				checkBubbleToDestroy();
 			}
 		}
 	}
 
 	private void drawBubbles(Canvas canvas) {
-
+		boolean change = false;
+		if (t1>500 &&t1 % 500 == 0) {
+			change = true;
+			t1 = 0;
+			noOfShiftedRows++;
+			
+			Log.d("no Of shifted Rows",noOfShiftedRows+"");
+		}
 		for (int i = 0; i < bubbleHight; i++) {
 			for (int j = 0; j < bubblewidth; j++) {
 
 				if (bubbles[i][j] != null && !bubbles[i][j].destroy) {
-
+					if (change) {
+						
+						bubbles[i][j].noOfShiftedRows = noOfShiftedRows;
+						bubbles[i][j].y += bubbles[i][j].noOfShiftedRows * 30;
+					}
 					bubbles[i][j].draw(canvas);
 				}
 			}
 		}
-
-		Iterator<Bubble> it = waitingBubbles.iterator();
-		while (it.hasNext()) {
-			Bubble curr = it.next();
-			curr.draw(canvas);
+		if (!changingWaiting) {
+			synchronized (waitingBubbles) {
+				
+			
+			Iterator<Bubble> it = waitingBubbles.iterator();
+			while (it.hasNext()) {
+				Bubble curr = it.next();
+				curr.draw(canvas);
+			}
+			}
 		}
+		t1++;
+		
 
 	}
 
@@ -509,16 +549,19 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 		if (moving) {
 			// check if hit the ceil
-			if (movingBubble.y <= 30) {
+			if (movingBubble.y <= (30+noOfShiftedRows*30)) {
 				int posX = (movingBubble.x - 30) / 30;
+				Log.d("no Of shifted Rows",noOfShiftedRows+"");
 				if (bubbles[0][posX] == null) {
 					bubbles[0][posX] = new Bubble(
 
 					bubbles_normal[movingBubble.colorIndex],
 
-					posX * 30 + 30, 30);
+					posX * 30 + 30, 30+(noOfShiftedRows*30));
 					bubbles[0][posX].markedCheck = true;
-					bubbles[0][posX].colorIndex=movingBubble.colorIndex;
+					bubbles[0][posX].y=30+(noOfShiftedRows*30);
+					bubbles[0][posX].colorIndex = movingBubble.colorIndex;
+					bubbles[0][posX].noOfShiftedRows=noOfShiftedRows;
 					moving = false;
 					movingBubble.destroy = true;
 					numOfBubble++;
@@ -529,12 +572,15 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 					posX, 0));
 					colorIndexDest = movingBubble.colorIndex;
+					sounds.play(collide, 5.0f, 5.0f, 1, 0, 1.5f);
+					
 				}
 			}
 			for (int i = bubbleHight - 1; i >= 0 && moving; i--) {
 				for (int j = bubblewidth - 1; j >= 0 && moving; j--) {
 					Bubble curr = bubbles[i][j];
 					if (curr != null) {
+						
 						// int diffY = Math.abs(movingBubble.y - curr.y);
 
 						// check if hit from right
@@ -613,6 +659,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 														.add(new Point(j - 1,
 																i + 1));
 												colorIndexDest = movingBubble.colorIndex;
+												sounds.play(collide, 1.0f, 1.0f, 0, 0, 1.5f);
 
 											}
 										}
@@ -633,6 +680,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 													i + 1));
 											colorIndexDest = movingBubble.colorIndex;
+											sounds.play(collide, 1.0f, 1.0f, 0, 0, 1.5f);
 
 										}
 									}
@@ -669,6 +717,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 													i + 1));
 											colorIndexDest = movingBubble.colorIndex;
+											sounds.play(collide, 1.0f, 1.0f, 0, 0, 1.5f);
 
 										}
 									} else {
@@ -693,6 +742,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 														i + 1));
 												colorIndexDest = movingBubble.colorIndex;
+												sounds.play(collide, 1.0f, 1.0f, 0, 0, 1.5f);
 
 											}
 										}
@@ -741,6 +791,16 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 						// }
 
 					}
+				}
+			}
+		
+		}
+		for (int i = bubbleHight-1; i >=0; i--) {
+			for (int j = bubblewidth-1; j >=0; j--) {
+				if(bubbles[i][j]!=null){
+				if((height-bubbles[i][j].y)<5 && ((width/2)-bubbles[i][j].x)<15 && ((width/2)-bubbles[i][j].x)>-15){
+					sounds.play(lose, 5.0f, 5.0f, 1, 0, 1.5f);
+				}
 				}
 			}
 		}

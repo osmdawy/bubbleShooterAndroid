@@ -37,8 +37,9 @@ public class GameThread extends Thread{
 					// update game state 
 					// render state to the screen
 					// draws the canvas on the panel
-					this.gamePanel.update();
+					
 					this.gamePanel.onDraw(canvas);
+//					this.gamePanel.update();
 					
 //					try {
 //						Thread.sleep(100);
