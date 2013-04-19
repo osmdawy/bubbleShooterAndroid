@@ -11,6 +11,8 @@ public class Bubble {
 	 int y;			// the Y coordinat
 	 int colorIndex;
 	boolean destroy ;
+	boolean markedCheck=false;
+	
 //	Speed speed;
 
 	public Bubble(Bitmap bitmap, int x, int y) {
@@ -24,6 +26,18 @@ public class Bubble {
 		colorIndex=0;
 		destroy = false;
 //		this.speed = new Speed();
+	}
+	public Bubble( int x, int y,int colInd,boolean check) {
+		// TODO Auto-generated constructor stub
+//		this.bitmap = bitmap;
+//		GameScreen.width = bitmap.getWidth();
+//		GameScreen.height=bitmap.getHeight();
+		this.x = x;
+		this.y = y;
+		colorIndex=colInd;
+		destroy = false;
+		markedCheck=check;
+		
 	}
 
 	public void draw(Canvas canvas) {

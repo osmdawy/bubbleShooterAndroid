@@ -24,11 +24,14 @@ import android.view.SurfaceView;
 
 public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 	private static final String TAG = GameScreen.class.getSimpleName();
-	static Point originalPoint;
+	// static Point originalPoint;
 	private GameThread thread;
 	private Bubble[][] bubbles;
 	private Bitmap[] bubbles_normal = new Bitmap[8];
-	Point[] positions;
+	// variables for destruction
+	Queue<Point> bubblePositionsToDestroy;
+	int colorIndexDest = 0;
+
 	static int width;
 	static int height;
 	static int bubbleHight;
@@ -39,7 +42,6 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 	int numOfWaitingBubbles = 4;
 	Bubble movingBubble;
 	float slope;
-	int tryX = 5;
 	float deltaX = 0;
 	boolean moving = false;
 	final int noOfSteps = 50;
@@ -48,13 +50,14 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 		// num of bubbles should be initialized according to level no
 		numOfBubble = 6;
 
-		originalPoint = new Point(width, height / 2);
 		// generating pics of bubbles
 		bubbles = new Bubble[20][10];
+		bubblePositionsToDestroy = new LinkedList<Point>();
 		bubbleHight = bubbles.length;
 		bubblewidth = bubbles[0].length;
+
 		// movingBubble = new Bubble();
-		positions = new Point[100];
+
 		BitmapFactory.Options options = new BitmapFactory.Options();
 		BitmapFactory.decodeResource(getResources(), R.drawable.bubble_1,
 				options);
@@ -134,6 +137,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 								45 + (int) j * 30, 30 + i * 30);
 						// positions[i] = new Point(45 + (int) j * 30, i * 30);
 					}
+					bubbles[i][j].colorIndex = index;
 				} else {
 
 					bubbles[i][j] = null;
@@ -143,17 +147,18 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 			}
 
 		}
-		index = random.nextInt(8);
-		Bubble First = new Bubble(bubbles_normal[index], width / 2, height);
-		First.colorIndex = index;
-		waitingBubbles.add(First);
+		
 
-		for (int i = 1; i < numOfWaitingBubbles; i++) {
+		for (int i = numOfWaitingBubbles-1; i >=0; i--) {
 			index = random.nextInt(8);
 			Bubble curr = new Bubble(bubbles_normal[index], 30 + i * 30, height);
 			curr.colorIndex = index;
 			waitingBubbles.add(curr);
 		}
+//		index = random.nextInt(8);
+//		Bubble First = new Bubble(bubbles_normal[index], width / 2, height);
+//		First.colorIndex = index;
+//		waitingBubbles.add(First);
 		// create the game loop thread
 		thread = new GameThread(getHolder(), this);
 
@@ -242,10 +247,198 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 	}
 
+	/**
+	 * while queue is not empty poll a bubble from the queue
+	 */
+
+	private void checkBubbleToDestroy() {
+		int numOfBubblesChecked = 1;
+		while (bubblePositionsToDestroy.size() > 0) {
+			Log.d("Color", colorIndexDest + "");
+			Point curr = bubblePositionsToDestroy.poll();
+			int posX = curr.x;
+			int posY = curr.y;
+			Log.d("Points ", curr.x + " " + curr.y);
+			// check its neighbor
+			// check the right position
+			if (posX < bubblewidth - 1) {
+				if (bubbles[posY][posX + 1] != null
+						&& !bubbles[posY][posX + 1].markedCheck) {
+					if (bubbles[posY][posX + 1].colorIndex == colorIndexDest) {
+						bubbles[posY][posX + 1].markedCheck = true;
+						bubblePositionsToDestroy.add(new Point(posX + 1, posY));
+						numOfBubblesChecked++;
+					}
+				}
+			}
+			// check the left position
+			if (posX > 0) {
+				if (bubbles[posY][posX - 1] != null
+						&& !bubbles[posY][posX - 1].markedCheck) {
+					if (bubbles[posY][posX - 1].colorIndex == colorIndexDest) {
+						bubbles[posY][posX - 1].markedCheck = true;
+						bubblePositionsToDestroy.add(new Point(posX - 1, posY));
+						numOfBubblesChecked++;
+					}
+				}
+			}
+			// check the top and down
+			if (posY % 2 == 0) {
+				// even row
+
+				if (posY < bubbleHight - 1) {
+					// check bottom right
+					if (bubbles[posY + 1][posX] != null
+							&& !bubbles[posY + 1][posX].markedCheck) {
+						if (bubbles[posY + 1][posX].colorIndex == colorIndexDest) {
+							bubbles[posY + 1][posX].markedCheck = true;
+							bubblePositionsToDestroy.add(new Point(posX,
+									posY + 1));
+							numOfBubblesChecked++;
+						}
+					}
+					// check bottom left
+					if (posX > 0) {
+						if (bubbles[posY + 1][posX - 1] != null
+								&& !bubbles[posY + 1][posX - 1].markedCheck) {
+							if (bubbles[posY + 1][posX - 1].colorIndex == colorIndexDest) {
+								bubbles[posY + 1][posX - 1].markedCheck = true;
+								bubblePositionsToDestroy.add(new Point(
+										posX - 1, posY + 1));
+								numOfBubblesChecked++;
+							}
+						}
+					}
+				}
+
+				if (posY > 0) {
+					// check top right
+					if (bubbles[posY - 1][posX] != null
+							&& !bubbles[posY - 1][posX].markedCheck) {
+						if (bubbles[posY - 1][posX].colorIndex == colorIndexDest) {
+							bubbles[posY - 1][posX].markedCheck = true;
+							bubblePositionsToDestroy.add(new Point(posX,
+									posY - 1));
+							numOfBubblesChecked++;
+						}
+					}
+					// check top left
+					if (posX > 0) {
+						if (bubbles[posY - 1][posX - 1] != null
+								&& !bubbles[posY - 1][posX - 1].markedCheck) {
+							if (bubbles[posY - 1][posX - 1].colorIndex == colorIndexDest) {
+								bubbles[posY - 1][posX - 1].markedCheck = true;
+								bubblePositionsToDestroy.add(new Point(
+										posX - 1, posY - 1));
+								numOfBubblesChecked++;
+							}
+						}
+					}
+				}
+
+			} else {
+				// odd row
+				if (posY < bubbleHight - 1) {
+					// check bottom right
+					if (posX < bubblewidth - 1) {
+						if (bubbles[posY + 1][posX + 1] != null
+								&& !bubbles[posY + 1][posX + 1].markedCheck) {
+							if (bubbles[posY + 1][posX + 1].colorIndex == colorIndexDest) {
+								bubbles[posY + 1][posX + 1].markedCheck = true;
+								bubblePositionsToDestroy.add(new Point(
+										posX + 1, posY + 1));
+								numOfBubblesChecked++;
+							}
+						}
+					}
+					// check bottom left
+					if (bubbles[posY + 1][posX] != null
+							&& !bubbles[posY + 1][posX].markedCheck) {
+						if (bubbles[posY + 1][posX].colorIndex == colorIndexDest) {
+							bubbles[posY + 1][posX].markedCheck = true;
+							bubblePositionsToDestroy.add(new Point(posX,
+									posY + 1));
+							numOfBubblesChecked++;
+						}
+					}
+				}
+				if (posY > 0) {
+					// check top right
+					if (posX < bubblewidth - 1) {
+						if (bubbles[posY - 1][posX + 1] != null
+								&& !bubbles[posY - 1][posX + 1].markedCheck) {
+							if (bubbles[posY - 1][posX + 1].colorIndex == colorIndexDest) {
+								bubbles[posY - 1][posX + 1].markedCheck = true;
+								bubblePositionsToDestroy.add(new Point(
+										posX + 1, posY - 1));
+								numOfBubblesChecked++;
+							}
+						}
+					}
+					// check top left
+					if (bubbles[posY - 1][posX] != null
+							&& !bubbles[posY - 1][posX].markedCheck) {
+						if (bubbles[posY - 1][posX].colorIndex == colorIndexDest) {
+							bubbles[posY - 1][posX].markedCheck = true;
+							bubblePositionsToDestroy.add(new Point(posX,
+									posY - 1));
+							numOfBubblesChecked++;
+						}
+					}
+				}
+
+			}
+
+		}
+
+		// check to destroy
+		if (numOfBubblesChecked > 2) {
+			for (int i = 0; i < bubbleHight; i++) {
+				for (int j = 0; j < bubblewidth; j++) {
+					if (bubbles[i][j] != null && bubbles[i][j].markedCheck) {
+						bubbles[i][j] = null;
+					}
+				}
+			}
+			// check if the ball should fall (no bubbles hold it)
+			for (int i = 0; i < bubbleHight; i++) {
+				for (int j = 0; j < bubblewidth; j++) {
+					if (bubbles[i][j] != null && i>0) {
+						if(i%2==0){
+							if(j>0){
+								if(bubbles[i-1][j-1]==null&&bubbles[i-1][j]==null){
+									bubbles[i][j]=null;
+								}
+							}
+						}else{
+							if(j<bubblewidth-1){
+								if(bubbles[i-1][j+1]==null&&bubbles[i-1][j]==null){
+									bubbles[i][j]=null;
+								}
+							}
+						}
+
+					}
+				}
+
+			}
+		} else {
+			for (int i = 0; i < bubbleHight; i++) {
+				for (int j = 0; j < bubblewidth; j++) {
+					if (bubbles[i][j] != null) {
+						bubbles[i][j].markedCheck = false;
+					}
+				}
+			}
+		}
+	
+
+	}
+
 	public void update() {
 		if (movingBubble != null) {
 			if (moving) {
-				if (movingBubble.x >= 30*bubblewidth) {
+				if (movingBubble.x >= 30 * bubblewidth) {
 					deltaX = -deltaX;
 				}
 				if (movingBubble.x <= 30) {
@@ -258,6 +451,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 				movingBubble.y = movingBubble.y - deltaY;
 
 				checkCollision();
+				checkBubbleToDestroy();
 			}
 		}
 	}
@@ -306,20 +500,35 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 		return myBubbles;
 	}
 
+	/**
+	 * check the collision for the moving bubble with the static bubble and put
+	 * it in a suitable position on the array if it collides then put it on the
+	 * queue (bubble to be destroyed)
+	 */
 	private void checkCollision() {
+
 		if (moving) {
 			// check if hit the ceil
 			if (movingBubble.y <= 30) {
 				int posX = (movingBubble.x - 30) / 30;
-				if(bubbles[0][posX]==null){
-				bubbles[0][posX] = new Bubble(
+				if (bubbles[0][posX] == null) {
+					bubbles[0][posX] = new Bubble(
 
-				bubbles_normal[movingBubble.colorIndex],
+					bubbles_normal[movingBubble.colorIndex],
 
-				posX * 30 + 30, 30);
-				moving=false;
-				movingBubble.destroy=true;
-				numOfBubble++;
+					posX * 30 + 30, 30);
+					bubbles[0][posX].markedCheck = true;
+					bubbles[0][posX].colorIndex=movingBubble.colorIndex;
+					moving = false;
+					movingBubble.destroy = true;
+					numOfBubble++;
+
+					// VIP note in this case x and y in the bubble represents
+					// their index in the array
+					bubblePositionsToDestroy.add(new Point(
+
+					posX, 0));
+					colorIndexDest = movingBubble.colorIndex;
 				}
 			}
 			for (int i = bubbleHight - 1; i >= 0 && moving; i--) {
@@ -395,10 +604,16 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 														curr.x - 15,
 														curr.y + 30);
-
+												bubbles[i + 1][j - 1].markedCheck = true;
+												bubbles[i + 1][j - 1].colorIndex = movingBubble.colorIndex;
 												moving = false;
 												movingBubble.destroy = true;
 												numOfBubble++;
+												bubblePositionsToDestroy
+														.add(new Point(j - 1,
+																i + 1));
+												colorIndexDest = movingBubble.colorIndex;
+
 											}
 										}
 									} else {// for odd rows
@@ -408,10 +623,17 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 													bubbles_normal[movingBubble.colorIndex],
 
 													curr.x - 15, curr.y + 30);
-
+											bubbles[i + 1][j].colorIndex = movingBubble.colorIndex;
+											bubbles[i + 1][j].markedCheck = true;
 											moving = false;
 											movingBubble.destroy = true;
 											numOfBubble++;
+											bubblePositionsToDestroy
+													.add(new Point(j,
+
+													i + 1));
+											colorIndexDest = movingBubble.colorIndex;
+
 										}
 									}
 
@@ -437,10 +659,17 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 													bubbles_normal[movingBubble.colorIndex],
 
 													curr.x + 15, curr.y + 30);
-
+											bubbles[i + 1][j].markedCheck = true;
+											bubbles[i + 1][j].colorIndex = movingBubble.colorIndex;
 											moving = false;
 											movingBubble.destroy = true;
 											numOfBubble++;
+											bubblePositionsToDestroy
+													.add(new Point(j,
+
+													i + 1));
+											colorIndexDest = movingBubble.colorIndex;
+
 										}
 									} else {
 
@@ -454,10 +683,17 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 														curr.x + 15,
 														curr.y + 30);
-
+												bubbles[i + 1][j + 1].colorIndex = movingBubble.colorIndex;
+												bubbles[i + 1][j + 1].markedCheck = true;
 												moving = false;
 												movingBubble.destroy = true;
 												numOfBubble++;
+												bubblePositionsToDestroy
+														.add(new Point(j + 1,
+
+														i + 1));
+												colorIndexDest = movingBubble.colorIndex;
+
 											}
 										}
 									}
