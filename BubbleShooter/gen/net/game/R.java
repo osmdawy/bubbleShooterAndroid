@@ -20,21 +20,38 @@ public final class R {
         public static final int bubble_6=0x7f020006;
         public static final int bubble_7=0x7f020007;
         public static final int bubble_8=0x7f020008;
-        public static final int compressor=0x7f020009;
-        public static final int droid_1=0x7f02000a;
-        public static final int ic_launcher=0x7f02000b;
-        public static final int icon=0x7f02000c;
-        public static final int lose_panel=0x7f02000d;
-        public static final int win_panel=0x7f02000e;
+        public static final int bubble_colourblind_1=0x7f020009;
+        public static final int bubble_colourblind_2=0x7f02000a;
+        public static final int bubble_colourblind_3=0x7f02000b;
+        public static final int bubble_colourblind_4=0x7f02000c;
+        public static final int bubble_colourblind_5=0x7f02000d;
+        public static final int bubble_colourblind_6=0x7f02000e;
+        public static final int bubble_colourblind_7=0x7f02000f;
+        public static final int bubble_colourblind_8=0x7f020010;
+        public static final int compressor=0x7f020011;
+        public static final int droid_1=0x7f020012;
+        public static final int ic_launcher=0x7f020013;
+        public static final int icon=0x7f020014;
+        public static final int lose_panel=0x7f020015;
+        public static final int win_panel=0x7f020016;
+    }
+    public static final class id {
+        public static final int button3=0x7f070002;
+        public static final int newGame=0x7f070000;
+        public static final int selectLevel=0x7f070001;
+    }
+    public static final class layout {
+        public static final int levelselector=0x7f030000;
+        public static final int main=0x7f030001;
     }
     public static final class raw {
-        public static final int destroy_group=0x7f030000;
-        public static final int explosion=0x7f030001;
-        public static final int lose=0x7f030002;
-        public static final int rebound=0x7f030003;
+        public static final int destroy_group=0x7f040000;
+        public static final int explosion=0x7f040001;
+        public static final int lose=0x7f040002;
+        public static final int rebound=0x7f040003;
     }
     public static final class string {
-        public static final int app_name=0x7f040000;
+        public static final int app_name=0x7f050000;
     }
     public static final class style {
         /** 
@@ -58,10 +75,10 @@ public final class R {
     
  API 14 theme customizations can go here. 
          */
-        public static final int AppBaseTheme=0x7f050000;
+        public static final int AppBaseTheme=0x7f060000;
         /**  Application theme. 
  All customizations that are NOT specific to a particular API-level can go here. 
          */
-        public static final int AppTheme=0x7f050001;
+        public static final int AppTheme=0x7f060001;
     }
 }
