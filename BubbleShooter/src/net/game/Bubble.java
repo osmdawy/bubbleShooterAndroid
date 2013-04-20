@@ -6,7 +6,7 @@ import android.graphics.Canvas;
 
 
 public class Bubble {
-	 private Bitmap bitmap;	// the actual bitmap
+	  Bitmap bitmap;	// the actual bitmap
 	 int x;			// the X coordinate
 	 int y;			// the Y coordinat
 	 int colorIndex;
@@ -16,6 +16,14 @@ public class Bubble {
 	
 //	Speed speed;
 
+	public Bubble() {
+		// TODO Auto-generated constructor stub
+		x=0;
+		y=0;
+		destroy=true;
+		boolean markedCheck=false;
+		int noOfShiftedRows=0;
+	}
 	public Bubble(Bitmap bitmap, int x, int y) {
 		super();
 		

@@ -23,6 +23,8 @@ public final class R {
         public static final int droid_1=0x7f020009;
         public static final int ic_launcher=0x7f02000a;
         public static final int icon=0x7f02000b;
+        public static final int lose_panel=0x7f02000c;
+        public static final int win_panel=0x7f02000d;
     }
     public static final class raw {
         public static final int destroy_group=0x7f030000;
