@@ -66,7 +66,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 	static Bitmap losePanel;
 	static Bitmap winPanel;
 	static Bitmap compressor;
-	static int levelN = 1;
+	static int levelN =1;
 	static int compressorPeriod;
 	static int[] colorsPresented;
 
@@ -117,7 +117,8 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 	}
 
-	private void reInit() {
+	public static void reInit() {
+		
 		noOfShiftedRows = 0;
 		score = 0;
 
@@ -230,6 +231,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 
 	}
 
+
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
 			int height) {
@@ -332,6 +334,9 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 				10, null);
 		if (numOfBubble == 0) {
 			canvas.drawBitmap(winPanel, initialXdis, 100, paint);
+			for (int i = 0; i < colorsPresented.length; i++) {
+				colorsPresented[i]=0;
+			}
 		} else if (!lose) {
 			drawBubbles(canvas);
 
@@ -345,6 +350,9 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 			canvas.drawText(score + "", 30, height - 50, paint);
 		} else {
 			canvas.drawBitmap(losePanel, initialXdis, 100, paint);
+			for (int i = 0; i < colorsPresented.length; i++) {
+				colorsPresented[i]=0;
+			}
 		}
 
 	}
