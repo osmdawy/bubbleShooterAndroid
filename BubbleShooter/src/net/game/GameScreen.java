@@ -41,13 +41,13 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 	static int bubblewidth;
 	final static int bubbleSize = 30;
 	static int numOfBubble = 0;
-	static LinkedList<Bubble> waitingBubbles = new LinkedList<Bubble>();
+	static Bubble[] waitingBubbles;
 	static final int numOfWaitingBubbles = 4;
 	static Bubble movingBubble;
 	static float slope;
 	static float deltaX = 0;
 	static boolean moving = false;
-	static final int noOfSteps = 50;
+	static final int noOfSteps = 20;
 	static boolean changingWaiting = false;
 	static int noOfShiftedRows = 0;
 	static int t1 = 0;
@@ -66,7 +66,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 	static Bitmap losePanel;
 	static Bitmap winPanel;
 	static Bitmap compressor;
-	static int levelN =1;
+	static int levelN = 1;
 	static int compressorPeriod;
 	static int[] colorsPresented;
 
@@ -76,6 +76,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 		// generating pics of bubbles
 
 		bubbles = new Bubble[20][8];
+		waitingBubbles = new Bubble[4];
 		bubblePositionsToDestroy = new LinkedList<Point>();
 		bubbleHight = bubbles.length;
 		bubblewidth = bubbles[0].length;
@@ -118,10 +119,10 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 	}
 
 	public static void reInit() {
-		
+
 		noOfShiftedRows = 0;
 		score = 0;
-
+		numOfBubble = 0;
 		noOfSameColor = 3 + levelN;
 		compressorPeriod = 1000 - levelN * 100;
 		int numOfBubblesGen = 0;
@@ -146,8 +147,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 							// positions[i] = new Point(30 + (int) j * 30, i*
 							// 30);
 
-						} else {
-							bubbles[i][j] = new Bubble(bubbles_normal[index],
+						} else {							bubbles[i][j] = new Bubble(bubbles_normal[index],
 									initialXdis + 15 + (int) j * 30,
 									initialYDis + i * 30);
 							// positions[i] = new Point(45 + (int) j * 30, i *
@@ -205,15 +205,17 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 		// x++;
 		// }
 		reInit();
-		int index = random.nextInt(noOfSameColor);
+		int index = 0;
+
 		for (int i = 0; i < numOfWaitingBubbles; i++) {
-			while(colorsPresented[index]<=0){
-			index = random.nextInt(noOfSameColor);
+			index = random.nextInt(8);
+			while (colorsPresented[index] <= 0) {
+				index = random.nextInt(8);
 			}
 			Bubble curr = new Bubble(bubbles_normal[index], 2 * initialXdis + i
 					* 30, height - initialYDis);
 			curr.colorIndex = index;
-			waitingBubbles.addFirst(curr);
+			waitingBubbles[i] = curr;
 		}
 		// index = random.nextInt(8);
 		// Bubble First = new Bubble(bubbles_normal[index], width / 2, height);
@@ -230,7 +232,6 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 		loseSound = sounds.load(context, R.raw.lose, 1);
 
 	}
-
 
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
@@ -267,52 +268,59 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 		if (lose) {
 			lose = false;
 			reInit();
-		}
-		if (!moving) {
-			float desiredY = event.getY();
-			if (desiredY - waitingBubbles.peek().y > -5) {
-
+		} else {
+			if (numOfBubble == 0) {
+				if (levelN < 3) {
+					levelN++;
+					Log.d("Level no", levelN + "");
+					reInit();
+				}
 			} else {
-				Bubble removed = waitingBubbles.removeFirst();
-				// changing bubble position
+				if (!moving) {
+					float desiredY = event.getY();
+					if (desiredY - waitingBubbles[numOfWaitingBubbles - 1].y > -5) {
 
-				// int tempY = removed.y;
+					} else {
+						Bubble removed = waitingBubbles[numOfWaitingBubbles - 1];
+						// changing bubble position
+						movingBubble.bitmap = bubbles_normal[removed.colorIndex];
+						movingBubble.x = removed.x;
+						movingBubble.y = removed.y;
+						// movingBubble = new
+						// Bubble(bubbles_normal[removed.colorIndex],
+						// removed.x, removed.y);
+						movingBubble.colorIndex = removed.colorIndex;
+						movingBubble.destroy = false;
+						// int tempY = removed.y;
 
-				synchronized (waitingBubbles) {
-					for (int i = 0; i < waitingBubbles.size(); i++) {
-						waitingBubbles.get(i).x = waitingBubbles.get(i).x + 30;
+						synchronized (waitingBubbles) {
+							for (int i = numOfWaitingBubbles - 2; i >= 0; i--) {
+								waitingBubbles[i + 1].colorIndex = waitingBubbles[i].colorIndex;
+								waitingBubbles[i + 1].bitmap = bubbles_normal[waitingBubbles[i + 1].colorIndex];
 
+							}
+						}
+
+						int index = random.nextInt(8);
+						while (colorsPresented[index] == 0) {
+							index = random.nextInt(8);
+						}
+						waitingBubbles[0].colorIndex = index;
+						// add new Bubble
+
+						float desiredX = event.getX();
+						deltaX = ((desiredX - movingBubble.x) / noOfSteps);
+						// if (desiredX > width / 2) {
+						// deltaX = 1;
+						// } else {
+						// deltaX = -1;
+						// }
+
+						slope = (desiredY - movingBubble.y)
+								/ (desiredX - movingBubble.x);
+						moving = true;
 					}
 				}
-			
-				int index = random.nextInt(noOfSameColor);
-				while(colorsPresented[index]==0){
-					index = random.nextInt(noOfSameColor);
-				}
-				Bubble curr = new Bubble(bubbles_normal[index],
-						2 * initialXdis, height - initialYDis);
-				curr.colorIndex = index;
-				waitingBubbles.addLast(curr);
-				// add new Bubble
-				movingBubble.bitmap = bubbles_normal[removed.colorIndex];
-				movingBubble.x = removed.x;
-				movingBubble.y = removed.y;
-				// movingBubble = new Bubble(bubbles_normal[removed.colorIndex],
-				// removed.x, removed.y);
-				movingBubble.colorIndex = removed.colorIndex;
-				movingBubble.destroy = false;
-
-				float desiredX = event.getX();
-				deltaX = ((desiredX - movingBubble.x) / noOfSteps);
-				// if (desiredX > width / 2) {
-				// deltaX = 1;
-				// } else {
-				// deltaX = -1;
-				// }
-
-				slope = (desiredY - movingBubble.y)
-						/ (desiredX - movingBubble.x);
-				moving = true;
 			}
 		}
 		try {
@@ -320,6 +328,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+
 		}
 		return true;
 	}
@@ -335,7 +344,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 		if (numOfBubble == 0) {
 			canvas.drawBitmap(winPanel, initialXdis, 100, paint);
 			for (int i = 0; i < colorsPresented.length; i++) {
-				colorsPresented[i]=0;
+				colorsPresented[i] = 0;
 			}
 		} else if (!lose) {
 			drawBubbles(canvas);
@@ -351,7 +360,7 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 		} else {
 			canvas.drawBitmap(losePanel, initialXdis, 100, paint);
 			for (int i = 0; i < colorsPresented.length; i++) {
-				colorsPresented[i]=0;
+				colorsPresented[i] = 0;
 			}
 		}
 
@@ -640,10 +649,8 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 		if (!changingWaiting) {
 			synchronized (waitingBubbles) {
 
-				Iterator<Bubble> it = waitingBubbles.iterator();
-				while (it.hasNext()) {
-					Bubble curr = it.next();
-					curr.draw(canvas);
+				for (int i = 0; i < waitingBubbles.length; i++) {
+					waitingBubbles[i].draw(canvas);
 				}
 			}
 		}
@@ -663,32 +670,36 @@ public class GameScreen extends SurfaceView implements SurfaceHolder.Callback {
 			if (movingBubble.y <= (initialYDis + (noOfShiftedRows * 30))) {
 				int posX = (movingBubble.x - 30) / 30;
 				Log.d("no Of shifted Rows", noOfShiftedRows + "");
-				if (bubbles[0][posX].destroy) {
-					bubbles[0][posX].destroy = false;
-					bubbles[0][posX].bitmap = bubbles_normal[movingBubble.colorIndex];
-					bubbles[0][posX].x = posX * 30 + initialXdis;
-					// bubbles[0][posX] = new Bubble(
-					//
-					// bubbles_normal[movingBubble.colorIndex],
-					//
-					// posX * 30 + initialXdis, initialYDis
-					// + (noOfShiftedRows * 30));
-					bubbles[0][posX].markedCheck = true;
-					bubbles[0][posX].y = initialYDis + (noOfShiftedRows * 30);
-					bubbles[0][posX].colorIndex = movingBubble.colorIndex;
-					bubbles[0][posX].noOfShiftedRows = noOfShiftedRows;
-					moving = false;
-					movingBubble.destroy = true;
-					numOfBubble++;
+				if (posX < bubblewidth) {
+					if (bubbles[0][posX].destroy) {
+						bubbles[0][posX].destroy = false;
+						bubbles[0][posX].bitmap = bubbles_normal[movingBubble.colorIndex];
+						bubbles[0][posX].x = posX * 30 + initialXdis;
+						// bubbles[0][posX] = new Bubble(
+						//
+						// bubbles_normal[movingBubble.colorIndex],
+						//
+						// posX * 30 + initialXdis, initialYDis
+						// + (noOfShiftedRows * 30));
+						bubbles[0][posX].markedCheck = true;
+						bubbles[0][posX].y = initialYDis
+								+ (noOfShiftedRows * 30);
+						bubbles[0][posX].colorIndex = movingBubble.colorIndex;
+						bubbles[0][posX].noOfShiftedRows = noOfShiftedRows;
+						moving = false;
+						movingBubble.destroy = true;
+						numOfBubble++;
 
-					// VIP note in this case x and y in the bubble represents
-					// their index in the array
-					bubblePositionsToDestroy.add(new Point(
+						// VIP note in this case x and y in the bubble
+						// represents
+						// their index in the array
+						bubblePositionsToDestroy.add(new Point(
 
-					posX, 0));
-					colorIndexDest = movingBubble.colorIndex;
-					sounds.play(collide, 5.0f, 5.0f, 1, 0, 1.5f);
-					colorsPresented[movingBubble.colorIndex]++;
+						posX, 0));
+						colorIndexDest = movingBubble.colorIndex;
+						sounds.play(collide, 5.0f, 5.0f, 1, 0, 1.5f);
+						colorsPresented[movingBubble.colorIndex]++;
+					}
 				}
 			}
 			for (int i = bubbleHight - 1; i >= 0 && moving; i--) {
